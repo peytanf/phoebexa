@@ -14,7 +14,12 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Serve static files from multiple directories
+app.use('/assets', express.static(path.join(__dirname, 'assets')));
 app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(__dirname, 'pages')));
+
 app.use(session({
     secret: process.env.SESSION_SECRET || 'your-secret-key',
     resave: false,
@@ -37,8 +42,10 @@ app.use('/api/reservations', reservationsRoutes);
 app.use('/api/sales', salesRoutes);
 app.use('/api/auth', authRoutes);
 
-// Serve static files
-app.use('/', express.static(path.join(__dirname, 'pages')));
+// Serve index page
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'pages', 'sign-in.html'));
+});
 
 // Error handling middleware
 app.use((err, req, res, next) => {

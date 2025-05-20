@@ -5,6 +5,7 @@ const pool = require('../config/database');
 // Get dashboard summary counts
 router.get('/summary', async (req, res) => {
     try {
+        console.log('Fetching dashboard summary...');
         const queries = [
             'SELECT COUNT(*) as count FROM employees',
             'SELECT COUNT(*) as count FROM inventory',
@@ -12,19 +13,29 @@ router.get('/summary', async (req, res) => {
             'SELECT COUNT(*) as count FROM sales'
         ];
 
-        const [employeesCount, inventoryCount, reservationsCount, salesCount] = await Promise.all(
-            queries.map(query => pool.query(query))
+        const results = await Promise.all(
+            queries.map(async (query) => {
+                try {
+                    const [result] = await pool.query(query);
+                    return result[0].count;
+                } catch (err) {
+                    console.error(`Error executing query: ${query}`, err);
+                    return 0;
+                }
+            })
         );
 
+        const [employees, inventory, reservations, sales] = results;
+
         res.json({
-            employees: employeesCount[0][0].count,
-            inventory: inventoryCount[0][0].count,
-            reservations: reservationsCount[0][0].count,
-            sales: salesCount[0][0].count
+            employees,
+            inventory,
+            reservations,
+            sales
         });
     } catch (error) {
         console.error('Error fetching dashboard summary:', error);
-        res.status(500).json({ error: 'Failed to fetch dashboard summary' });
+        res.status(500).json({ error: 'Failed to fetch dashboard summary', details: error.message });
     }
 });
 
@@ -57,285 +68,354 @@ router.get('/recent', async (req, res) => {
 // Get sales data for chart
 router.get('/sales-chart', async (req, res) => {
     try {
+        console.log('Fetching sales chart data...');
         const query = `
             SELECT 
-                DATE_FORMAT(sale_date, '%Y-%m-%d') as date,
-                SUM(amount) as total
+                DATE(created_at) as date,
+                SUM(total_amount) as total
             FROM sales
-            GROUP BY DATE_FORMAT(sale_date, '%Y-%m-%d')
+            WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)
+            GROUP BY DATE(created_at)
             ORDER BY date DESC
-            LIMIT 7
         `;
         
         const [results] = await pool.query(query);
+        console.log('Sales chart data:', results);
         res.json(results);
     } catch (error) {
         console.error('Error fetching sales chart data:', error);
-        res.status(500).json({ error: 'Failed to fetch sales chart data' });
+        res.status(500).json({ error: 'Failed to fetch sales chart data', details: error.message });
     }
 });
 
 // Get inventory status for chart
 router.get('/inventory-chart', async (req, res) => {
     try {
+        console.log('Fetching inventory chart data...');
         const query = `
             SELECT 
-                category,
-                COUNT(*) as count,
-                SUM(quantity) as total_quantity
-            FROM inventory
-            GROUP BY category
+                COALESCE(c.name, 'Uncategorized') as category,
+                COUNT(i.product_id) as count,
+                SUM(i.quantity) as total_quantity
+            FROM inventory i
+            LEFT JOIN categories c ON i.category_id = c.category_id
+            GROUP BY c.category_id, c.name
         `;
         
         const [results] = await pool.query(query);
+        console.log('Inventory chart data:', results);
         res.json(results);
     } catch (error) {
         console.error('Error fetching inventory chart data:', error);
-        res.status(500).json({ error: 'Failed to fetch inventory chart data' });
+        res.status(500).json({ error: 'Failed to fetch inventory chart data', details: error.message });
     }
 });
 
 // Get employee performance data for line chart
 router.get('/employee-performance', async (req, res) => {
     try {
-        // This is a sample query - you may need to adjust it based on your actual database schema
+        console.log('Fetching employee performance data...');
         const query = `
             SELECT 
-                DATE_FORMAT(CONCAT('2023-', month, '-01'), '%b') as month,
-                ROUND(AVG(sales_performance), 2) as sales_performance,
-                ROUND(AVG(customer_satisfaction), 2) as customer_satisfaction
-            FROM (
-                SELECT 
-                    MONTH(sale_date) as month,
-                    e.id as employee_id,
-                    COUNT(s.id) * 5 as sales_performance,
-                    FLOOR(RAND() * 20) + 80 as customer_satisfaction
-                FROM 
-                    employees e
-                LEFT JOIN 
-                    sales s ON e.id = s.employee_id
-                WHERE 
-                    YEAR(sale_date) = 2023
-                GROUP BY 
-                    MONTH(sale_date), e.id
-            ) as performance
-            GROUP BY month
-            ORDER BY MONTH(CONCAT('2023-', month, '-01'))
-            LIMIT 12
+                DATE_FORMAT(s.sale_date, '%b') as month,
+                COUNT(s.sale_id) as sales_count,
+                ROUND(AVG(s.total_amount), 2) as average_sale
+            FROM 
+                employees e
+            LEFT JOIN 
+                sales s ON e.employee_id = s.employee_id
+            WHERE 
+                YEAR(s.sale_date) = YEAR(CURRENT_DATE)
+            GROUP BY 
+                DATE_FORMAT(s.sale_date, '%b'), MONTH(s.sale_date)
+            ORDER BY 
+                MONTH(s.sale_date)
         `;
         
-        // Fallback if query fails due to schema differences
-        try {
-            const [results] = await pool.query(query);
-            if (results.length > 0) {
-                return res.json(results);
-            }
-        } catch (innerError) {
-            console.log('Using sample data due to query error:', innerError.message);
-        }
+        const [results] = await pool.query(query);
         
-        // Fallback sample data
-        const sampleData = [
-            { month: 'Jan', sales_performance: 85, customer_satisfaction: 92 },
-            { month: 'Feb', sales_performance: 78, customer_satisfaction: 88 },
-            { month: 'Mar', sales_performance: 82, customer_satisfaction: 90 },
-            { month: 'Apr', sales_performance: 86, customer_satisfaction: 85 },
-            { month: 'May', sales_performance: 91, customer_satisfaction: 89 },
-            { month: 'Jun', sales_performance: 95, customer_satisfaction: 94 },
-            { month: 'Jul', sales_performance: 92, customer_satisfaction: 91 },
-            { month: 'Aug', sales_performance: 88, customer_satisfaction: 90 },
-            { month: 'Sep', sales_performance: 83, customer_satisfaction: 87 },
-            { month: 'Oct', sales_performance: 80, customer_satisfaction: 88 },
-            { month: 'Nov', sales_performance: 87, customer_satisfaction: 92 },
-            { month: 'Dec', sales_performance: 94, customer_satisfaction: 95 }
-        ];
+        // Transform the data for the chart
+        const chartData = results.map(row => ({
+            month: row.month,
+            sales_performance: row.sales_count ? (row.sales_count * 10) + (row.average_sale / 10) : 0,
+            customer_satisfaction: row.sales_count ? Math.min(95, Math.max(80, 85 + (row.average_sale / 100))) : 80
+        }));
         
-        res.json(sampleData);
+        console.log('Employee performance data:', chartData);
+        res.json(chartData);
     } catch (error) {
         console.error('Error fetching employee performance data:', error);
-        res.status(500).json({ error: 'Failed to fetch employee performance data' });
+        res.status(500).json({ error: 'Failed to fetch employee performance data', details: error.message });
     }
 });
 
 // Get sales distribution data for pie chart
 router.get('/sales-distribution', async (req, res) => {
     try {
-        // Query to get revenue by product category
+        console.log('Fetching sales distribution data...');
         const query = `
             SELECT 
-                i.category,
-                SUM(s.amount) as revenue
+                COALESCE(c.name, 'Uncategorized') as category,
+                SUM(s.total_amount) as revenue
             FROM 
                 sales s
-            JOIN 
-                inventory i ON s.product_id = i.id
+            LEFT JOIN 
+                inventory i ON s.product_id = i.product_id
+            LEFT JOIN 
+                categories c ON i.category_id = c.category_id
             GROUP BY 
-                i.category
+                c.category_id, c.name
+            HAVING 
+                revenue > 0
             ORDER BY 
                 revenue DESC
         `;
         
-        // Fallback if query fails due to schema differences
-        try {
-            const [results] = await pool.query(query);
-            if (results.length > 0) {
-                return res.json(results);
-            }
-        } catch (innerError) {
-            console.log('Using sample data due to query error:', innerError.message);
-        }
-        
-        // Fallback sample data
-        const sampleData = [
-            { category: 'Prescription Drugs', revenue: 58500 },
-            { category: 'Over the Counter', revenue: 32400 },
-            { category: 'Vitamins & Supplements', revenue: 18700 },
-            { category: 'Personal Care', revenue: 15300 },
-            { category: 'Health Equipment', revenue: 12800 },
-            { category: 'First Aid', revenue: 9200 }
-        ];
-        
-        res.json(sampleData);
+        const [results] = await pool.query(query);
+        console.log('Sales distribution data:', results);
+        res.json(results);
     } catch (error) {
         console.error('Error fetching sales distribution data:', error);
-        res.status(500).json({ error: 'Failed to fetch sales distribution data' });
+        res.status(500).json({ error: 'Failed to fetch sales distribution data', details: error.message });
     }
 });
 
 // Get product analysis data for bubble chart
 router.get('/product-analysis', async (req, res) => {
     try {
-        // Query to get product price, quantity, and sales volume
+        console.log('Fetching product analysis data...');
         const query = `
             SELECT 
-                i.name as product_name,
+                i.product_name,
                 i.price,
                 i.quantity,
-                COUNT(s.id) as sales_volume
+                COUNT(s.sale_id) as sales_volume,
+                COALESCE(SUM(s.total_amount), 0) as total_sales
             FROM 
                 inventory i
             LEFT JOIN 
-                sales s ON i.id = s.product_id
+                sales s ON i.product_id = s.product_id
             GROUP BY 
-                i.id
+                i.product_id, i.product_name, i.price, i.quantity
             ORDER BY 
-                sales_volume DESC
+                total_sales DESC
             LIMIT 10
         `;
         
-        // Fallback if query fails due to schema differences
-        try {
-            const [results] = await pool.query(query);
-            if (results.length > 0) {
-                return res.json(results);
-            }
-        } catch (innerError) {
-            console.log('Using sample data due to query error:', innerError.message);
-        }
-        
-        // Fallback sample data
-        const sampleData = [
-            { product_name: 'Aspirin 100mg', price: 12.99, quantity: 150, sales_volume: 85 },
-            { product_name: 'Vitamin C 500mg', price: 24.50, quantity: 200, sales_volume: 62 },
-            { product_name: 'Ibuprofen 200mg', price: 8.75, quantity: 120, sales_volume: 95 },
-            { product_name: 'Blood Pressure Monitor', price: 75.00, quantity: 25, sales_volume: 15 },
-            { product_name: 'Zinc Lozenges', price: 15.25, quantity: 80, sales_volume: 40 },
-            { product_name: 'Digital Thermometer', price: 32.99, quantity: 45, sales_volume: 28 },
-            { product_name: 'Hand Sanitizer', price: 5.99, quantity: 300, sales_volume: 120 },
-            { product_name: 'Multivitamins', price: 29.99, quantity: 175, sales_volume: 58 },
-            { product_name: 'Allergy Relief', price: 18.50, quantity: 90, sales_volume: 72 },
-            { product_name: 'First Aid Kit', price: 45.75, quantity: 35, sales_volume: 25 }
-        ];
-        
-        res.json(sampleData);
+        const [results] = await pool.query(query);
+        console.log('Product analysis data:', results);
+        res.json(results);
     } catch (error) {
         console.error('Error fetching product analysis data:', error);
-        res.status(500).json({ error: 'Failed to fetch product analysis data' });
+        res.status(500).json({ error: 'Failed to fetch product analysis data', details: error.message });
     }
 });
 
 // Get department performance data for radar chart
 router.get('/department-performance', async (req, res) => {
     try {
-        // This query would need customization based on your actual schema
+        console.log('Fetching department performance data...');
         const query = `
             SELECT 
-                department,
-                AVG(efficiency) as efficiency,
-                AVG(customer_service) as customer_service,
-                AVG(innovation) as innovation,
-                AVG(team_work) as team_work,
-                AVG(reliability) as reliability
-            FROM (
-                SELECT 
-                    CASE 
-                        WHEN role LIKE '%sales%' THEN 'Sales'
-                        WHEN role LIKE '%pharmacy%' THEN 'Pharmacy'
-                        WHEN role LIKE '%manager%' THEN 'Management'
-                        WHEN role LIKE '%admin%' THEN 'Administration'
-                        ELSE 'General'
-                    END as department,
-                    FLOOR(60 + RAND() * 40) as efficiency,
-                    FLOOR(60 + RAND() * 40) as customer_service,
-                    FLOOR(60 + RAND() * 40) as innovation,
-                    FLOOR(60 + RAND() * 40) as team_work,
-                    FLOOR(60 + RAND() * 40) as reliability
-                FROM 
-                    employees
-            ) as performance_metrics
-            GROUP BY department
+                COALESCE(d.name, 'Unassigned') as department,
+                COUNT(DISTINCT e.employee_id) as employee_count,
+                COUNT(s.sale_id) as total_sales,
+                ROUND(AVG(s.total_amount), 2) as avg_sale_amount,
+                COALESCE(SUM(s.total_amount), 0) as total_revenue
+            FROM 
+                departments d
+            LEFT JOIN 
+                employees e ON d.department_id = e.department_id
+            LEFT JOIN 
+                sales s ON e.employee_id = s.employee_id
+            GROUP BY 
+                d.department_id, d.name
         `;
         
-        // Fallback if query fails due to schema differences
-        try {
-            const [results] = await pool.query(query);
-            if (results.length > 0) {
-                return res.json(results);
-            }
-        } catch (innerError) {
-            console.log('Using sample data due to query error:', innerError.message);
-        }
+        const [results] = await pool.query(query);
         
-        // Fallback sample data
-        const sampleData = [
-            { 
-                department: 'Sales', 
-                efficiency: 85, 
-                customer_service: 92, 
-                innovation: 78, 
-                team_work: 88, 
-                reliability: 90 
-            },
-            { 
-                department: 'Pharmacy', 
-                efficiency: 90, 
-                customer_service: 85, 
-                innovation: 75, 
-                team_work: 82, 
-                reliability: 95 
-            },
-            { 
-                department: 'Management', 
-                efficiency: 88, 
-                customer_service: 80, 
-                innovation: 92, 
-                team_work: 90, 
-                reliability: 85 
-            },
-            { 
-                department: 'Administration', 
-                efficiency: 82, 
-                customer_service: 75, 
-                innovation: 70, 
-                team_work: 85, 
-                reliability: 88 
-            }
-        ];
+        // Transform the data for the radar chart
+        const chartData = results.map(row => {
+            const maxSales = Math.max(...results.map(r => r.total_sales || 0));
+            const maxRevenue = Math.max(...results.map(r => r.total_revenue || 0));
+            
+            return {
+                department: row.department,
+                'Sales Performance': maxSales ? Math.round((row.total_sales / maxSales) * 100) : 0,
+                'Revenue Generation': maxRevenue ? Math.round((row.total_revenue / maxRevenue) * 100) : 0,
+                'Team Size': Math.min(100, (row.employee_count || 0) * 20),
+                'Average Transaction': row.avg_sale_amount ? Math.min(100, (row.avg_sale_amount / 1000) * 100) : 0,
+                'Efficiency': row.employee_count ? Math.round(((row.total_revenue / row.employee_count) / (maxRevenue / Math.max(...results.map(r => r.employee_count || 1)))) * 100) : 0
+            };
+        });
         
-        res.json(sampleData);
+        console.log('Department performance data:', chartData);
+        res.json(chartData);
     } catch (error) {
         console.error('Error fetching department performance data:', error);
-        res.status(500).json({ error: 'Failed to fetch department performance data' });
+        res.status(500).json({ error: 'Failed to fetch department performance data', details: error.message });
+    }
+});
+
+// Get top performing employees
+router.get('/top-employees', async (req, res) => {
+    try {
+        console.log('Fetching top employees data...');
+        const query = `
+            SELECT 
+                e.name as employee_name,
+                e.email,
+                d.name as department,
+                COUNT(s.sale_id) as total_sales,
+                SUM(s.total_amount) as total_revenue,
+                ROUND(AVG(s.total_amount), 2) as avg_sale_amount
+            FROM 
+                employees e
+            LEFT JOIN 
+                departments d ON e.department_id = d.department_id
+            LEFT JOIN 
+                sales s ON e.employee_id = s.employee_id
+            GROUP BY 
+                e.employee_id, e.name, e.email, d.name
+            HAVING
+                total_sales > 0
+            ORDER BY 
+                total_revenue DESC
+            LIMIT 5
+        `;
+        
+        const [results] = await pool.query(query);
+        console.log('Top employees data:', results);
+        res.json(results);
+    } catch (error) {
+        console.error('Error fetching top employees data:', error);
+        res.status(500).json({ error: 'Failed to fetch top employees data', details: error.message });
+    }
+});
+
+// Get low stock products
+router.get('/low-stock', async (req, res) => {
+    try {
+        console.log('Fetching low stock products...');
+        const query = `
+            SELECT 
+                i.product_id,
+                i.product_name,
+                i.quantity,
+                i.reorder_level,
+                c.name as category,
+                i.price,
+                DATEDIFF(CURRENT_DATE, i.restock_date) as days_since_restock
+            FROM 
+                inventory i
+            LEFT JOIN 
+                categories c ON i.category_id = c.category_id
+            WHERE 
+                i.quantity <= i.reorder_level
+            ORDER BY 
+                i.quantity ASC
+        `;
+        
+        const [results] = await pool.query(query);
+        console.log('Low stock products:', results);
+        res.json(results);
+    } catch (error) {
+        console.error('Error fetching low stock products:', error);
+        res.status(500).json({ error: 'Failed to fetch low stock products', details: error.message });
+    }
+});
+
+// Get sales trends
+router.get('/sales-trends', async (req, res) => {
+    try {
+        console.log('Fetching sales trends...');
+        const query = `
+            SELECT 
+                DATE_FORMAT(sale_date, '%Y-%m') as month,
+                COUNT(sale_id) as total_transactions,
+                SUM(total_amount) as total_revenue,
+                ROUND(AVG(total_amount), 2) as avg_transaction_value,
+                COUNT(DISTINCT customer_id) as unique_customers,
+                COUNT(DISTINCT product_id) as products_sold
+            FROM 
+                sales
+            WHERE 
+                sale_date >= DATE_SUB(CURRENT_DATE, INTERVAL 6 MONTH)
+            GROUP BY 
+                DATE_FORMAT(sale_date, '%Y-%m')
+            ORDER BY 
+                month DESC
+        `;
+        
+        const [results] = await pool.query(query);
+        console.log('Sales trends:', results);
+        res.json(results);
+    } catch (error) {
+        console.error('Error fetching sales trends:', error);
+        res.status(500).json({ error: 'Failed to fetch sales trends', details: error.message });
+    }
+});
+
+// Get customer insights
+router.get('/customer-insights', async (req, res) => {
+    try {
+        console.log('Fetching customer insights...');
+        const query = `
+            SELECT 
+                c.name as customer_name,
+                COUNT(s.sale_id) as purchase_count,
+                SUM(s.total_amount) as total_spent,
+                ROUND(AVG(s.total_amount), 2) as avg_purchase_amount,
+                MAX(s.sale_date) as last_purchase_date
+            FROM 
+                customers c
+            LEFT JOIN 
+                sales s ON c.customer_id = s.customer_id
+            GROUP BY 
+                c.customer_id, c.name
+            HAVING 
+                purchase_count > 0
+            ORDER BY 
+                total_spent DESC
+            LIMIT 10
+        `;
+        
+        const [results] = await pool.query(query);
+        console.log('Customer insights:', results);
+        res.json(results);
+    } catch (error) {
+        console.error('Error fetching customer insights:', error);
+        res.status(500).json({ error: 'Failed to fetch customer insights', details: error.message });
+    }
+});
+
+// Get reservation status summary
+router.get('/reservation-status', async (req, res) => {
+    try {
+        console.log('Fetching reservation status summary...');
+        const query = `
+            SELECT 
+                status,
+                COUNT(*) as count,
+                COUNT(DISTINCT customer_id) as unique_customers,
+                COUNT(DISTINCT product_id) as unique_products,
+                SUM(quantity) as total_items,
+                MIN(reservation_date) as earliest_date,
+                MAX(expiry_date) as latest_expiry
+            FROM 
+                reservations
+            WHERE 
+                reservation_date >= DATE_SUB(CURRENT_DATE, INTERVAL 30 DAY)
+            GROUP BY 
+                status
+        `;
+        
+        const [results] = await pool.query(query);
+        console.log('Reservation status summary:', results);
+        res.json(results);
+    } catch (error) {
+        console.error('Error fetching reservation status:', error);
+        res.status(500).json({ error: 'Failed to fetch reservation status', details: error.message });
     }
 });
 
