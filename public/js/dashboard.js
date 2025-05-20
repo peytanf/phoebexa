@@ -157,9 +157,18 @@ async function initDepartmentPerformanceChart() {
         const data = await response.json();
         
         console.log('Department performance data received:', data);
-        console.log('Departments:', data.departments);
-        console.log('Sales Performance:', data.sales_performance);
-        console.log('Employee Efficiency:', data.employee_efficiency);
+        
+        // Data is coming as an array of department objects, transform it to the format we need
+        const transformedData = {
+            departments: data.map(dept => dept.department),
+            sales_performance: data.map(dept => dept['Sales Performance'] || 0),
+            employee_efficiency: data.map(dept => dept['Efficiency'] || 0)
+        };
+        
+        console.log('Transformed data:', transformedData);
+        console.log('Departments:', transformedData.departments);
+        console.log('Sales Performance:', transformedData.sales_performance);
+        console.log('Employee Efficiency:', transformedData.employee_efficiency);
 
         const ctx = document.getElementById('radar-chart');
         if (!ctx) {
@@ -171,10 +180,10 @@ async function initDepartmentPerformanceChart() {
         new Chart(ctx.getContext('2d'), {
             type: 'radar',
             data: {
-                labels: data.departments,
+                labels: transformedData.departments,
                 datasets: [{
                     label: 'Sales Performance',
-                    data: data.sales_performance,
+                    data: transformedData.sales_performance,
                     borderColor: '#9c27b0',
                     backgroundColor: 'rgba(156, 39, 176, 0.2)',
                     pointBackgroundColor: '#9c27b0',
@@ -183,7 +192,7 @@ async function initDepartmentPerformanceChart() {
                     pointHoverBorderColor: '#9c27b0'
                 }, {
                     label: 'Employee Efficiency',
-                    data: data.employee_efficiency,
+                    data: transformedData.employee_efficiency,
                     borderColor: '#00bcd4',
                     backgroundColor: 'rgba(0, 188, 212, 0.2)',
                     pointBackgroundColor: '#00bcd4',
@@ -242,7 +251,8 @@ async function checkDatabaseConnection() {
 document.addEventListener('DOMContentLoaded', function() {
     // Fetch dashboard data
     fetchDashboardSummary();
-    checkDatabaseConnection();
+    // Commenting out due to 404 error - endpoint doesn't exist
+    // checkDatabaseConnection();
     
     // Initialize charts
     initSalesChart();
