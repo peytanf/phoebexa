@@ -152,11 +152,23 @@ async function initSalesDistributionChart() {
 // Initialize department performance chart
 async function initDepartmentPerformanceChart() {
     try {
+        console.log('Fetching department performance data...');
         const response = await fetch('/api/dashboard/department-performance');
         const data = await response.json();
+        
+        console.log('Department performance data received:', data);
+        console.log('Departments:', data.departments);
+        console.log('Sales Performance:', data.sales_performance);
+        console.log('Employee Efficiency:', data.employee_efficiency);
 
-        const ctx = document.getElementById('radar-chart').getContext('2d');
-        new Chart(ctx, {
+        const ctx = document.getElementById('radar-chart');
+        if (!ctx) {
+            console.error('Radar chart canvas element not found!');
+            return;
+        }
+        
+        console.log('Creating radar chart...');
+        new Chart(ctx.getContext('2d'), {
             type: 'radar',
             data: {
                 labels: data.departments,
@@ -194,6 +206,7 @@ async function initDepartmentPerformanceChart() {
                 }
             }
         });
+        console.log('Radar chart created successfully!');
     } catch (error) {
         console.error('Error initializing department performance chart:', error);
         showError('Failed to load department performance chart');

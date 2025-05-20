@@ -230,27 +230,41 @@ router.get('/department-performance', async (req, res) => {
                 sales s ON e.employee_id = s.employee_id
             GROUP BY 
                 d.department_id, d.name
+            ORDER BY
+                d.name
         `;
         
         const [results] = await pool.query(query);
         
-        // Transform the data for the radar chart
-        const chartData = results.map(row => {
+        // Transform the data for the radar chart in the format expected by the client
+        const departments = results.map(row => row.department);
+        
+        // Calculate sales performance (based on total sales)
+        const salesPerformance = results.map(row => {
             const maxSales = Math.max(...results.map(r => r.total_sales || 0));
-            const maxRevenue = Math.max(...results.map(r => r.total_revenue || 0));
-            
-            return {
-                department: row.department,
-                'Sales Performance': maxSales ? Math.round((row.total_sales / maxSales) * 100) : 0,
-                'Revenue Generation': maxRevenue ? Math.round((row.total_revenue / maxRevenue) * 100) : 0,
-                'Team Size': Math.min(100, (row.employee_count || 0) * 20),
-                'Average Transaction': row.avg_sale_amount ? Math.min(100, (row.avg_sale_amount / 1000) * 100) : 0,
-                'Efficiency': row.employee_count ? Math.round(((row.total_revenue / row.employee_count) / (maxRevenue / Math.max(...results.map(r => r.employee_count || 1)))) * 100) : 0
-            };
+            return maxSales ? Math.round((row.total_sales / maxSales) * 100) : 0;
         });
         
-        console.log('Department performance data:', chartData);
-        res.json(chartData);
+        // Calculate employee efficiency (based on revenue per employee)
+        const employeeEfficiency = results.map(row => {
+            if (!row.employee_count) return 0;
+            const revenuePerEmployee = row.total_revenue / row.employee_count;
+            const maxRevenuePerEmployee = Math.max(...results
+                .filter(r => r.employee_count > 0)
+                .map(r => r.total_revenue / r.employee_count));
+            
+            return maxRevenuePerEmployee ? Math.round((revenuePerEmployee / maxRevenuePerEmployee) * 100) : 0;
+        });
+        
+        // Format data as expected by the client
+        const formattedData = {
+            departments,
+            sales_performance: salesPerformance,
+            employee_efficiency: employeeEfficiency
+        };
+        
+        console.log('Department performance data:', formattedData);
+        res.json(formattedData);
     } catch (error) {
         console.error('Error fetching department performance data:', error);
         res.status(500).json({ error: 'Failed to fetch department performance data', details: error.message });
