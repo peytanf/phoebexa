@@ -327,7 +327,7 @@ $salesCount = $salesCountStmt->fetch(PDO::FETCH_ASSOC)['count'];
             <div class="card-header pb-0 p-3">
               <div class="d-flex justify-content-between">
                 <h6 class="mb-0 chart-title">Reservations Data</h6>
-                <div>
+                <div> 
                   <span class="filter-label">View:</span>
                   <select class="form-select form-select-sm w-auto chart-filter" data-chart="bubble">
                     <option value="reservations-only">Reservations Only</option>
