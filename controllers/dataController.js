@@ -1,7 +1,7 @@
 // Data controller
 
-const mysql = require('mysql2/promise');
-const dotenv = require('dotenv');
+import getConnection from '../config/database.js';
+import dotenv from 'dotenv';
 
 dotenv.config();
 
@@ -14,90 +14,93 @@ const dbConfig = {
 };
 
 // Controller methods
-const dataController = {
-    // 1. Sales Data
-    async getSalesData(req, res) {
-        try {
-            const connection = await mysql.createConnection(dbConfig);
-            const [rows] = await connection.execute('SELECT * FROM sales ORDER BY date');
-            await connection.end();
-            res.json(rows);
-        } catch (error) {
-            res.status(500).json({ error: error.message });
-        }
-    },
-
-    // 2. Inventory Status
-    async getInventoryStatus(req, res) {
-        try {
-            const connection = await mysql.createConnection(dbConfig);
-            const [rows] = await connection.execute('SELECT * FROM inventory');
-            await connection.end();
-            res.json(rows);
-        } catch (error) {
-            res.status(500).json({ error: error.message });
-        }
-    },
-
-    // 3. Employee Performance
-    async getEmployeePerformance(req, res) {
-        try {
-            const connection = await mysql.createConnection(dbConfig);
-            const [rows] = await connection.execute('SELECT * FROM employees');
-            await connection.end();
-            res.json(rows);
-        } catch (error) {
-            res.status(500).json({ error: error.message });
-        }
-    },
-
-    // 4. Reservation Trends
-    async getReservationTrends(req, res) {
-        try {
-            const connection = await mysql.createConnection(dbConfig);
-            const [rows] = await connection.execute('SELECT * FROM reservations');
-            await connection.end();
-            res.json(rows);
-        } catch (error) {
-            res.status(500).json({ error: error.message });
-        }
-    },
-
-    // 5. Daily Statistics
-    async getDailyStats(req, res) {
-        try {
-            const connection = await mysql.createConnection(dbConfig);
-            const [rows] = await connection.execute('SELECT * FROM daily_stats');
-            await connection.end();
-            res.json(rows);
-        } catch (error) {
-            res.status(500).json({ error: error.message });
-        }
-    },
-
-    // 6. Monthly Comparison
-    async getMonthlyComparison(req, res) {
-        try {
-            const connection = await mysql.createConnection(dbConfig);
-            const [rows] = await connection.execute('SELECT * FROM monthly_stats');
-            await connection.end();
-            res.json(rows);
-        } catch (error) {
-            res.status(500).json({ error: error.message });
-        }
-    },
-
-    // 7. Yearly Analysis
-    async getYearlyAnalysis(req, res) {
-        try {
-            const connection = await mysql.createConnection(dbConfig);
-            const [rows] = await connection.execute('SELECT * FROM yearly_stats');
-            await connection.end();
-            res.json(rows);
-        } catch (error) {
-            res.status(500).json({ error: error.message });
-        }
+export const getSalesData = async (req, res) => {
+    let connection;
+    try {
+        connection = await getConnection();
+        const [rows] = await connection.execute('SELECT * FROM sales');
+        res.json(rows);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    } finally {
+        if (connection) await connection.end();
     }
 };
 
-module.exports = dataController;
+export const getInventoryStatus = async (req, res) => {
+    let connection;
+    try {
+        connection = await getConnection();
+        const [rows] = await connection.execute('SELECT * FROM inventory');
+        res.json(rows);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    } finally {
+        if (connection) await connection.end();
+    }
+};
+
+export const getEmployeePerformance = async (req, res) => {
+    let connection;
+    try {
+        connection = await getConnection();
+        const [rows] = await connection.execute('SELECT * FROM employees');
+        res.json(rows);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    } finally {
+        if (connection) await connection.end();
+    }
+};
+
+export const getReservationTrends = async (req, res) => {
+    let connection;
+    try {
+        connection = await getConnection();
+        const [rows] = await connection.execute('SELECT * FROM reservations');
+        res.json(rows);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    } finally {
+        if (connection) await connection.end();
+    }
+};
+
+export const getDailyStats = async (req, res) => {
+    let connection;
+    try {
+        connection = await getConnection();
+        const [rows] = await connection.execute('SELECT * FROM daily_stats');
+        res.json(rows);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    } finally {
+        if (connection) await connection.end();
+    }
+};
+
+export const getMonthlyComparison = async (req, res) => {
+    let connection;
+    try {
+        connection = await getConnection();
+        const [rows] = await connection.execute('SELECT * FROM monthly_stats');
+        res.json(rows);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    } finally {
+        if (connection) await connection.end();
+    }
+};
+
+export const getYearlyAnalysis = async (req, res) => {
+    let connection;
+    try {
+        connection = await getConnection();
+        const [rows] = await connection.execute('SELECT * FROM yearly_stats');
+        res.json(rows);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    } finally {
+        if (connection) await connection.end();
+    }
+};

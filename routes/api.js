@@ -1,10 +1,9 @@
 // API routes
 
-const express = require('express');
-const router = express.Router();
+import express from 'express';
+import * as dataController from '../controllers/dataController.js';
 
-// Import controller (we'll create this next)
-const dataController = require('../controllers/dataController');
+const router = express.Router();
 
 // Define API routes
 // GET endpoints for different chart data
@@ -16,4 +15,4 @@ router.get('/daily-stats', dataController.getDailyStats);
 router.get('/monthly-comparison', dataController.getMonthlyComparison);
 router.get('/yearly-analysis', dataController.getYearlyAnalysis);
 
-module.exports = router;
+export default router;

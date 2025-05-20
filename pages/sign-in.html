@@ -36,21 +36,24 @@
                 </div>
               </div>
               <div class="card-body">
-                <form role="form" class="text-start">
+                <form role="form" class="text-start" id="login-form">
                   <div class="input-group input-group-outline my-3">
-                    <label class="form-label">Email</label>
-                    <input type="email" class="form-control">
+                    <label class="form-label">Username</label>
+                    <input type="text" class="form-control" id="username">
                   </div>
                   <div class="input-group input-group-outline mb-3">
                     <label class="form-label">Password</label>
-                    <input type="password" class="form-control">
+                    <input type="password" class="form-control" id="password">
                   </div>
                   <div class="form-check form-switch d-flex align-items-center mb-3">
                     <input class="form-check-input" type="checkbox" id="rememberMe" checked>
                     <label class="form-check-label mb-0 ms-3" for="rememberMe">Remember me</label>
                   </div>
+                  <div id="login-error" class="text-danger text-center mb-3" style="display: none;">
+                    Invalid username or password
+                  </div>
                   <div class="text-center">
-                    <button type="button" class="btn bg-gradient-dark w-100 my-4 mb-2" href="dashboard.html">Sign in</button>
+                    <button type="submit" class="btn bg-gradient-dark w-100 my-4 mb-2" id="login-btn">Sign in</button>
                   </div>
                   <p class="mt-4 text-sm text-center">
                     Don't have an account?
@@ -69,15 +72,43 @@
   <script src="../assets/js/core/bootstrap.min.js"></script>
   <script src="../assets/js/plugins/perfect-scrollbar.min.js"></script>
   <script src="../assets/js/plugins/smooth-scrollbar.min.js"></script>
+  
+  <!-- Login Script -->
   <script>
-    var win = navigator.platform.indexOf('Win') > -1;
-    if (win && document.querySelector('#sidenav-scrollbar')) {
-      var options = {
-        damping: '0.5'
-      }
-      Scrollbar.init(document.querySelector('#sidenav-scrollbar'), options);
-    }
+    document.addEventListener('DOMContentLoaded', function() {
+      const loginForm = document.getElementById('login-form');
+      const usernameInput = document.getElementById('username');
+      const passwordInput = document.getElementById('password');
+      const loginError = document.getElementById('login-error');
+      
+      // Set focus on the username input
+      usernameInput.focus();
+      
+      loginForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const username = usernameInput.value.trim();
+        const password = passwordInput.value.trim();
+        
+        // Simple check for admin credentials
+        // In a real app, this would be validated against the backend API
+        if (username === 'admin' && password === 'admin') {
+          // Store login state in localStorage or sessionStorage
+          localStorage.setItem('isLoggedIn', 'true');
+          localStorage.setItem('username', username);
+          
+          // Redirect to dashboard
+          window.location.href = 'dashboard.html';
+        } else {
+          // Show error message
+          loginError.style.display = 'block';
+          // Clear password field
+          passwordInput.value = '';
+        }
+      });
+    });
   </script>
+  
   <!-- Github buttons -->
   <script async defer src="https://buttons.github.io/buttons.js"></script>
   <!-- Control Center for Material Dashboard: parallax effects, scripts for the example pages etc -->
