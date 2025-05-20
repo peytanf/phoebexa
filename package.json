@@ -5,7 +5,7 @@
   "main": "/dashboard.html",
   "type": "module",
   "directories": {
-    "example": "root"
+    "doc": "docs"
   },
   "scripts": {
     "open-app": "gulp open-app",
@@ -40,5 +40,12 @@
     "gulp-open": "3.0.1",
     "sass": "1.80.2"
   },
-  "homepage": "https://creative-tim.com/product/material-dashboard"
+  "homepage": "https://creative-tim.com/product/material-dashboard",
+  "dependencies": {
+    "chart.js": "^4.4.9",
+    "cors": "^2.8.5",
+    "dotenv": "^16.5.0",
+    "express": "^5.1.0",
+    "mysql2": "^3.14.1"
+  }
 }
