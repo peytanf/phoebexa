@@ -93,6 +93,13 @@ The system manages comprehensive pharmaceutical retail data including:
    Open http://localhost:3000 in your web browser
    ```
 
+## Authentication
+The system implements a simple client-side authentication system:
+- Default credentials: username: `admin`, password: `admin`
+- Authentication state is stored in browser's localStorage
+- Protected routes redirect unauthenticated users to the login page
+- Sign-out functionality clears authentication data
+
 ## Dependencies
 
 ### Core Dependencies
@@ -172,75 +179,72 @@ The system manages comprehensive pharmaceutical retail data including:
    ]
    ```
 
-4. `GET /api/dashboard/product-analysis`
-   - Product performance metrics
-   - Sales volume vs. price analysis
-   - Response example:
-   ```json
-   [
-     {
-       "product_name": "Vitamin C 500mg",
-       "price": 213.35,
-       "quantity": 30,
-       "sales_volume": 45,
-       "total_sales": 9600.75
-     }
-   ]
-   ```
-
-5. `GET /api/dashboard/department-performance`
+4. `GET /api/dashboard/department-performance`
    - Departmental efficiency metrics
    - Team performance indicators
    - Response example:
    ```json
-   [
-     {
-       "department": "Sales",
-       "Sales Performance": 85,
-       "Revenue Generation": 90,
-       "Team Size": 60,
-       "Average Transaction": 75,
-       "Efficiency": 82
-     }
-   ]
+   {
+     "departments": ["Sales", "Pharmacy", "Management", "Inventory", "Marketing"],
+     "sales_performance": [85, 75, 60, 70, 80],
+     "employee_efficiency": [90, 85, 75, 65, 70]
+   }
    ```
 
-6. `GET /api/dashboard/top-employees`
-   - Top performing staff
-   - Sales achievement metrics
+5. `GET /api/dashboard/sales-chart`
+   - Weekly sales performance
+   - Trend visualization
    - Response example:
    ```json
    [
      {
-       "employee_name": "John Doe",
-       "email": "john@example.com",
-       "department": "Sales",
-       "total_sales": 150,
-       "total_revenue": 45000.00,
-       "avg_sale_amount": 300.00
+       "date": "2024-03-04",
+       "total": 3865.75
+     },
+     {
+       "date": "2024-03-05",
+       "total": 4285.50
      }
    ]
    ```
 
-7. `GET /api/dashboard/customer-insights`
-   - Customer behavior analysis
-   - Purchase patterns
+6. `GET /api/reservations`
+   - Reservation list with details
    - Response example:
    ```json
    [
      {
-       "customer_name": "Jane Smith",
-       "purchase_count": 12,
-       "total_spent": 3500.00,
-       "avg_purchase_amount": 291.67,
-       "last_purchase_date": "2024-03-01"
+       "reservation_id": "R0001",
+       "customer_name": "John Doe",
+       "product_name": "Vitamin C 500mg",
+       "quantity": 4,
+       "status": "pending",
+       "reservation_date": "2024-03-01",
+       "expiry_date": "2024-03-08"
+     }
+   ]
+   ```
+
+7. `GET /api/employees`
+   - Employee list with department info
+   - Response example:
+   ```json
+   [
+     {
+       "employee_id": 1,
+       "name": "Employee 1",
+       "email": "emp1@phoebexa.com",
+       "department_id": 1,
+       "department_name": "Management",
+       "hire_date": "2023-01-01",
+       "phone": "111-222-3333"
      }
    ]
    ```
 
 ## Features
 1. **Real-time Dashboard**
-   - Interactive charts
+   - Interactive charts (4 types: line, doughnut, pie, radar)
    - Dynamic data updates
    - Performance metrics
 
@@ -254,15 +258,23 @@ The system manages comprehensive pharmaceutical retail data including:
    - Performance analysis
    - Trend visualization
 
-4. **Employee Performance**
-   - Sales attribution
-   - Department metrics
-   - Efficiency tracking
+4. **Simplified Reservation System**
+   - Clear reservation listing
+   - Status indicators (pending, confirmed, completed, cancelled)
+   - Expiry date tracking
 
 5. **Customer Management**
    - Purchase history
    - Reservation tracking
    - Contact management
+
+## UI Features & Recent Changes
+- Consistent Material Dashboard design across all pages
+- Responsive mobile-first layout
+- Simplified Reservations page with direct table view
+- Focused dashboard with four essential charts
+- User authentication with login/logout functionality
+- Protected routes with authentication checks
 
 ## Security Features
 - Session management

@@ -111,29 +111,6 @@
           <p class="mb-4">Interactive data visualization for your database</p>
         </div>
 
-        <!-- Database Notice (shown when no data) -->
-        <div id="database-notice" class="col-12 mb-4" style="display: none;">
-          <div class="card">
-            <div class="card-body p-4">
-              <div class="d-flex align-items-center">
-                <div class="icon icon-lg icon-shape bg-gradient-warning shadow text-center border-radius-lg mb-3">
-                  <i class="material-symbols-rounded opacity-10">warning</i>
-                </div>
-                <div class="ms-3">
-                  <h5 class="mb-2">Database Notice</h5>
-                  <p class="mb-1">The database connection is working, but no data was found in the tables.</p>
-                  <p class="mb-0">This could be because:</p>
-                  <ul class="mb-0">
-                    <li>The database tables are empty</li>
-                    <li>The database structure exists but no records have been added</li>
-                    <li>The column names in the tables may not match what the dashboard expects</li>
-                  </ul>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
         <!-- KPI Summary Cards -->
         <div class="col-xl-3 col-sm-6 mb-xl-0 mb-4">
           <div class="card">
@@ -246,21 +223,6 @@
 
         <!-- Additional Charts -->
         <div class="row mt-4">
-          <!-- Line Chart -->
-          <div class="col-lg-6 mb-4">
-            <div class="card">
-              <div class="card-header pb-0">
-                <h6>Employee Performance</h6>
-                <p class="text-sm">Monthly performance metrics</p>
-              </div>
-              <div class="card-body p-3">
-                <div class="chart">
-                  <canvas id="line-chart" class="chart-canvas" height="300px"></canvas>
-                </div>
-              </div>
-            </div>
-          </div>
-
           <!-- Pie Chart -->
           <div class="col-lg-6 mb-4">
             <div class="card">
@@ -271,23 +233,6 @@
               <div class="card-body p-3">
                 <div class="chart">
                   <canvas id="pie-chart" class="chart-canvas" height="300px"></canvas>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="row mt-4">
-          <!-- Bubble Chart -->
-          <div class="col-lg-6 mb-4">
-            <div class="card">
-              <div class="card-header pb-0">
-                <h6>Product Analysis</h6>
-                <p class="text-sm">Price vs. Quantity vs. Sales volume</p>
-              </div>
-              <div class="card-body p-3">
-                <div class="chart">
-                  <canvas id="bubble-chart" class="chart-canvas" height="300px"></canvas>
                 </div>
               </div>
             </div>

@@ -16,7 +16,7 @@ router.get('/', async (req, res) => {
 // GET inventory item by ID
 router.get('/:id', async (req, res) => {
     try {
-        const [rows] = await pool.query('SELECT * FROM inventory WHERE id = ?', [req.params.id]);
+        const [rows] = await pool.query('SELECT * FROM inventory WHERE product_id = ?', [req.params.id]);
         
         if (rows.length === 0) {
             return res.status(404).json({ error: 'Inventory item not found' });
@@ -30,9 +30,9 @@ router.get('/:id', async (req, res) => {
 });
 
 // GET inventory by category
-router.get('/category/:category', async (req, res) => {
+router.get('/category/:categoryId', async (req, res) => {
     try {
-        const [rows] = await pool.query('SELECT * FROM inventory WHERE category = ?', [req.params.category]);
+        const [rows] = await pool.query('SELECT * FROM inventory WHERE category_id = ?', [req.params.categoryId]);
         res.json(rows);
     } catch (error) {
         console.error('Error fetching inventory by category:', error);
@@ -45,12 +45,13 @@ router.get('/stats/summary', async (req, res) => {
     try {
         const query = `
             SELECT 
-                category,
+                c.name as category_name,
                 COUNT(*) as item_count,
-                SUM(quantity) as total_quantity,
-                AVG(price) as average_price
-            FROM inventory
-            GROUP BY category
+                SUM(i.quantity) as total_quantity,
+                AVG(i.price) as average_price
+            FROM inventory i
+            LEFT JOIN categories c ON i.category_id = c.category_id
+            GROUP BY i.category_id, c.name
         `;
         
         const [results] = await pool.query(query);

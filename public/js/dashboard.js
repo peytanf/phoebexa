@@ -100,52 +100,6 @@ async function initInventoryChart() {
     }
 }
 
-// Initialize employee performance chart
-async function initEmployeePerformanceChart() {
-    try {
-        const response = await fetch('/api/dashboard/employee-performance');
-        const data = await response.json();
-
-        const ctx = document.getElementById('line-chart').getContext('2d');
-        new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: data.map(item => item.month),
-                datasets: [{
-                    label: 'Sales Performance',
-                    data: data.map(item => item.sales_performance),
-                    borderColor: '#4caf50',
-                    tension: 0.4,
-                    fill: false
-                }, {
-                    label: 'Customer Satisfaction',
-                    data: data.map(item => item.customer_satisfaction),
-                    borderColor: '#f44336',
-                    tension: 0.4,
-                    fill: false
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        max: 100,
-                        title: {
-                            display: true,
-                            text: 'Performance Score'
-                        }
-                    }
-                }
-            }
-        });
-    } catch (error) {
-        console.error('Error initializing employee performance chart:', error);
-        showError('Failed to load employee performance chart');
-    }
-}
-
 // Initialize sales distribution chart
 async function initSalesDistributionChart() {
     try {
@@ -195,70 +149,6 @@ async function initSalesDistributionChart() {
     }
 }
 
-// Initialize product analysis chart
-async function initProductAnalysisChart() {
-    try {
-        const response = await fetch('/api/dashboard/product-analysis');
-        const data = await response.json();
-
-        const ctx = document.getElementById('bubble-chart').getContext('2d');
-        new Chart(ctx, {
-            type: 'bubble',
-            data: {
-                datasets: data.map((item, index) => ({
-                    label: item.product_name,
-                    data: [{
-                        x: item.price,
-                        y: item.quantity,
-                        r: item.sales_volume / 10
-                    }],
-                    backgroundColor: [
-                        'rgba(54, 162, 235, 0.6)',
-                        'rgba(255, 99, 132, 0.6)',
-                        'rgba(255, 206, 86, 0.6)',
-                        'rgba(75, 192, 192, 0.6)',
-                        'rgba(153, 102, 255, 0.6)',
-                        'rgba(255, 159, 64, 0.6)'
-                    ][index % 6]
-                }))
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    x: {
-                        title: {
-                            display: true,
-                            text: 'Price ($)'
-                        },
-                        ticks: {
-                            callback: value => '$' + value.toLocaleString()
-                        }
-                    },
-                    y: {
-                        title: {
-                            display: true,
-                            text: 'Quantity in Stock'
-                        }
-                    }
-                },
-                plugins: {
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                return `${context.dataset.label}: Price: $${context.raw.x.toLocaleString()}, Quantity: ${context.raw.y}, Sales: ${context.raw.r * 10}`;
-                            }
-                        }
-                    }
-                }
-            }
-        });
-    } catch (error) {
-        console.error('Error initializing product analysis chart:', error);
-        showError('Failed to load product analysis chart');
-    }
-}
-
 // Initialize department performance chart
 async function initDepartmentPerformanceChart() {
     try {
@@ -269,39 +159,37 @@ async function initDepartmentPerformanceChart() {
         new Chart(ctx, {
             type: 'radar',
             data: {
-                labels: Object.keys(data[0]).filter(key => key !== 'department'),
-                datasets: data.map((dept, index) => ({
-                    label: dept.department,
-                    data: Object.values(dept).filter((_, i) => i > 0),
-                    fill: true,
-                    backgroundColor: `rgba(${[
-                        [54, 162, 235],
-                        [255, 99, 132],
-                        [255, 206, 86],
-                        [75, 192, 192],
-                        [153, 102, 255],
-                        [255, 159, 64]
-                    ][index % 6].join(', ')}, 0.2)`,
-                    borderColor: `rgb(${[
-                        [54, 162, 235],
-                        [255, 99, 132],
-                        [255, 206, 86],
-                        [75, 192, 192],
-                        [153, 102, 255],
-                        [255, 159, 64]
-                    ][index % 6].join(', ')})`
-                }))
+                labels: data.departments,
+                datasets: [{
+                    label: 'Sales Performance',
+                    data: data.sales_performance,
+                    borderColor: '#9c27b0',
+                    backgroundColor: 'rgba(156, 39, 176, 0.2)',
+                    pointBackgroundColor: '#9c27b0',
+                    pointBorderColor: '#fff',
+                    pointHoverBackgroundColor: '#fff',
+                    pointHoverBorderColor: '#9c27b0'
+                }, {
+                    label: 'Employee Efficiency',
+                    data: data.employee_efficiency,
+                    borderColor: '#00bcd4',
+                    backgroundColor: 'rgba(0, 188, 212, 0.2)',
+                    pointBackgroundColor: '#00bcd4',
+                    pointBorderColor: '#fff',
+                    pointHoverBackgroundColor: '#fff',
+                    pointHoverBorderColor: '#00bcd4'
+                }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
                 scales: {
                     r: {
-                        min: 0,
-                        max: 100,
-                        ticks: {
-                            stepSize: 20
-                        }
+                        angleLines: {
+                            display: true
+                        },
+                        suggestedMin: 0,
+                        suggestedMax: 100
                     }
                 }
             }
@@ -312,19 +200,40 @@ async function initDepartmentPerformanceChart() {
     }
 }
 
-// Show error message
 function showError(message) {
-    // You can implement this to show error messages to the user
+    // Show error toast or notification
     console.error(message);
+    
+    // Display database notice if needed
+    if (message.includes('fetch')) {
+        document.getElementById('database-notice').style.display = 'block';
+    }
 }
 
-// Initialize all charts when the page loads
-document.addEventListener('DOMContentLoaded', () => {
+// Check database connection
+async function checkDatabaseConnection() {
+    try {
+        const response = await fetch('/api/dashboard/check-database');
+        const data = await response.json();
+        
+        if (!data.connected) {
+            document.getElementById('database-notice').style.display = 'block';
+        }
+    } catch (error) {
+        console.error('Error checking database connection:', error);
+        document.getElementById('database-notice').style.display = 'block';
+    }
+}
+
+// Initialize dashboard
+document.addEventListener('DOMContentLoaded', function() {
+    // Fetch dashboard data
     fetchDashboardSummary();
+    checkDatabaseConnection();
+    
+    // Initialize charts
     initSalesChart();
     initInventoryChart();
-    initEmployeePerformanceChart();
     initSalesDistributionChart();
-    initProductAnalysisChart();
     initDepartmentPerformanceChart();
 });

@@ -43,10 +43,10 @@ router.get('/summary', async (req, res) => {
 router.get('/recent', async (req, res) => {
     try {
         const queries = [
-            'SELECT * FROM employees ORDER BY id DESC LIMIT 10',
-            'SELECT * FROM inventory ORDER BY id DESC LIMIT 10',
-            'SELECT * FROM reservations ORDER BY id DESC LIMIT 10',
-            'SELECT * FROM sales ORDER BY id DESC LIMIT 10'
+            'SELECT * FROM employees ORDER BY employee_id DESC LIMIT 10',
+            'SELECT * FROM inventory ORDER BY product_id DESC LIMIT 10',
+            'SELECT * FROM reservations ORDER BY reservation_id DESC LIMIT 10',
+            'SELECT * FROM sales ORDER BY sale_id DESC LIMIT 10'
         ];
 
         const [employees, inventory, reservations, sales] = await Promise.all(

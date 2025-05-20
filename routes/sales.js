@@ -16,7 +16,7 @@ router.get('/', async (req, res) => {
 // GET sales by ID
 router.get('/:id', async (req, res) => {
     try {
-        const [rows] = await pool.query('SELECT * FROM sales WHERE id = ?', [req.params.id]);
+        const [rows] = await pool.query('SELECT * FROM sales WHERE sale_id = ?', [req.params.id]);
         
         if (rows.length === 0) {
             return res.status(404).json({ error: 'Sale not found' });
@@ -54,8 +54,8 @@ router.get('/stats/summary', async (req, res) => {
             SELECT 
                 DATE_FORMAT(sale_date, '%Y-%m-%d') as date,
                 COUNT(*) as total_sales,
-                SUM(amount) as total_amount,
-                AVG(amount) as average_sale
+                SUM(total_amount) as total_amount,
+                AVG(total_amount) as average_sale
             FROM sales
             GROUP BY DATE_FORMAT(sale_date, '%Y-%m-%d')
             ORDER BY date DESC
